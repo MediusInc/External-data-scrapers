@@ -27,7 +27,7 @@ sudo sysctl -w vm.max_map_count=262144
 Ref
 https://stackoverflow.com/questions/51445846/elasticsearch-max-virtual-memory-areas-vm-max-map-count-65530-is-too-low-inc
 
-You can now visit http://lcoalhost:5601.
+You can now visit http://localhost:5601.
 
 ### Scrapers development environment
 
@@ -35,7 +35,7 @@ Setup virtual environment
 
 ```
 python3 -m venv .venv-spiders
-source .venv/bin/activate
+source .venv-spiders/bin/activate
 pip install -r requirements.txt
 ```
 

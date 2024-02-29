@@ -3,7 +3,7 @@ import time
 import os
 
 print('Scheduler initialised')
-schedule.every(1).minutes.do(lambda: os.system(
+schedule.every(60).seconds.do(lambda: os.system(
     'scrapy crawl parking-availability'))
 print('Next job is set to run at: ' + str(schedule.next_run()))
 

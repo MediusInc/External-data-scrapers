@@ -1,43 +1,37 @@
-from opensearchpy import OpenSearch, exceptions
+from elasticsearch import Elasticsearch, exceptions
 
-class OpenSearchPipeline:
+class ElasticsearchPipeline:
 
     def __init__(self, index_name):
         self.index_name = "external_data_scrapers_" + index_name
 
-        self.client = OpenSearch(
-            hosts = [{"host": "localhost", "port": 9292}],
-            use_ssl = False,
-            verify_certs = False,
-            ssl_assert_hostname = False,
-            ssl_show_warn = False
-        )
+        self.client = Elasticsearch('http://localhost:9200')
 
         try:
-            self.client.indices.create(self.index_name, body=self.mapping)
-            print("A new index {index_name} was created.")
+            self.client.indices.create(index=self.index_name, body=self.mapping)
+            print(f"A new index {self.index_name} was created.")
         except exceptions.RequestError:
             # Test if there exists an index and calculate the index_name that will be used
-            if(not self._get_first_compatible_index()):
+            if not self._get_first_compatible_index():
                 # Create the index with the new mapping                
-                self.client.indices.create(self.index_name, body=self.mapping)
+                self.client.indices.create(index=self.index_name, body=self.mapping)
             else:
-                print("The index {self.index_name} was not created as it already exists.")
+                print(f"The index {self.index_name} was not created as it already exists.")
 
     def _get_first_compatible_index(self) -> bool:
-        """The functions iterates over the index names that are possible based on the initial
-        index_name and returns True if it finds an index whose mapping matches the self.mapping.
-        If such index does not exists False is returned. After executing this methode the
+        """The functions iterate over the index names that are possible based on the initial
+        index_name and return True if it finds an index whose mapping matches the self.mapping.
+        If such index does not exist, False is returned. After executing this method, the
         self.index_name contains the name of the index that will be used.
 
         :return: Boolean indicating if there exists an index that has a matching mapping.
         :rtype: bool
         """
 
-        # Iterate over indices that exists
-        while(self.client.indices.exists(self.index_name)):
-            # Test if mapping is the same (if it is return true - no new index needs to be created)
-            if(self.client.indices.get_mapping( self.index_name )[self.index_name]["mappings"] == self.mapping["mappings"]):
+        # Iterate over indices that exist
+        while self.client.indices.exists(index=self.index_name):
+            # Test if mapping is the same (if it is, return true - no new index needs to be created)
+            if self.client.indices.get_mapping(index=self.index_name)[self.index_name]["mappings"] == self.mapping["mappings"]:
                 return True
 
             # Construct self.index name with the next index that needs to be checked
@@ -51,7 +45,7 @@ class OpenSearchPipeline:
                 self.index_name += "_"
                 self.index_name += format(index_id, '03d')
         
-        # If no index exsists that has the same mapping return False
+        # If no index exists that has the same mapping, return False
         return False
 
     def process_item(self, item, spider):
@@ -60,16 +54,16 @@ class OpenSearchPipeline:
     def close_spider(self, spider):
         pass
 
-class ParkingAvailabilityPipeline(OpenSearchPipeline):
+class ParkingAvailabilityPipeline(ElasticsearchPipeline):
     def __init__(self):
         self.mapping = {
-            "settings" : {
+            "settings": {
                 "index": {
-                    "number_of_shards" : 1,
-                    "number_of_replicas" : 0
+                    "number_of_shards": 1,
+                    "number_of_replicas": 0
                 }
             },
-            "mappings":{
+            "mappings": {
                 "properties": {
                     "timestamp": {"type": "date", "format": "epoch_millis"},
                     "location": {"type": "keyword"},
@@ -98,4 +92,4 @@ class ParkingAvailabilityPipeline(OpenSearchPipeline):
         }    
         self.client.index(index=self.index_name, body=body)
 
-        return item   
+        return item
